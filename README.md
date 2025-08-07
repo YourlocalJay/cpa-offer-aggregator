@@ -31,31 +31,30 @@ login credentials.
 
 ### MyLead token retrieval
 
-The MyLead fetcher requires an access token. Provide your MyLead credentials
-via the `MYLEAD_USERNAME` and `MYLEAD_PASSWORD` environment variables (for
-example in your `.env` file). The token can be generated manually:
+The MyLead fetcher requires an access token. Provide your MyLead credentials via
+the `MYLEAD_USERNAME` and `MYLEAD_PASSWORD` environment variables (for example
+in your `.env` file). Tokens are fetched in-memory and injected into the
+`MYLEAD_TOKEN` environment variable automatically when you run `main.py`.
+
+To manually retrieve a token you can run:
 
 ```bash
-python get_mylead_token.py
+python -c "from get_mylead_token import fetch_mylead_token; print(fetch_mylead_token())"
 ```
 
-This script logs in to MyLead and writes the token to `mylead_token.txt` in the
-project root. When you run `main.py` the script is invoked automatically so the
-token is refreshed before offers are fetched.
+The token is not written to disk, avoiding stray credential files.
 
 #### Troubleshooting
 
-- **Missing credentials** – `get_mylead_token.py` prints `❌ Missing MyLead
+- **Missing credentials** – `fetch_mylead_token()` prints `❌ Missing MyLead
   credentials`. Ensure `MYLEAD_USERNAME` and `MYLEAD_PASSWORD` are set.
 - **Invalid login** – a `401`/`403` response indicates incorrect credentials or
   an account issue. Verify your username/password and that the account is
   active.
 - **Network errors** – connection timeouts or other `Login failed` messages can
   stem from network issues or API downtime. Retry once connectivity is restored.
-- **`mylead_token.txt` not found** – run the token script again to regenerate a
-  token; the file is read by the MyLead fetcher for the `Authorization` header.
-- **Expired token** – if fetching offers starts returning `401` responses, rerun
-  `get_mylead_token.py` to refresh the token.
+- **Expired token** – if fetching offers starts returning `401` responses, run
+  the aggregator again to refresh the token.
 
 ## Usage
 
