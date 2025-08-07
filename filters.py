@@ -15,7 +15,7 @@ and includes detailed logging for debugging purposes.
 """
 
 from typing import List, Dict, Any, Optional, Set, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from utils.logging import setup_logger
 
 logger = setup_logger(__name__)
@@ -30,7 +30,7 @@ class FilterCriteria:
     categories: Optional[Set[str]] = None
     required_tags: Optional[Set[str]] = None
     excluded_tags: Optional[Set[str]] = None
-    custom_validators: List[Callable[[Dict[str, Any]], bool]] = None
+    custom_validators: List[Callable[[Dict[str, Any]], bool]] = field(default_factory=list)
 
     def __post_init__(self):
         """Normalize and validate filter values."""
@@ -46,8 +46,6 @@ class FilterCriteria:
         if self.excluded_tags:
             self.excluded_tags = {t.lower() for t in self.excluded_tags}
 
-        if self.custom_validators is None:
-            self.custom_validators = []
 
 
 def filter_offers(
