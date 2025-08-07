@@ -109,8 +109,20 @@ def fetch_cpagrip_offers(
 
                 for row in offer_rows:
                     try:
-                        name = row.query_selector('.offer_name').inner_text().strip()
-                        payout_text = row.query_selector('.offer_payout').inner_text()
+                        name_el = row.query_selector('.offer_name')
+                        payout_el = row.query_selector('.offer_payout')
+                        device_el = row.query_selector('.offer_device')
+                        category_el = row.query_selector('.offer_category')
+                        restrictions_el = row.query_selector('.offer_restrictions')
+                        assert (
+                            name_el
+                            and payout_el
+                            and device_el
+                            and category_el
+                            and restrictions_el
+                        )
+                        name = name_el.inner_text().strip()
+                        payout_text = payout_el.inner_text()
                         payout = _parse_payout(payout_text)
                         if payout is None:
                             continue
@@ -125,8 +137,8 @@ def fetch_cpagrip_offers(
                             except Exception:
                                 continue
 
-                        device = row.query_selector('.offer_device').inner_text().strip()
-                        category = row.query_selector('.offer_category').inner_text().strip()
+                        device = device_el.inner_text().strip()
+                        category = category_el.inner_text().strip()
                         url_element = row.query_selector('.offer_link a')
                         url = url_element.get_attribute('href') if url_element else None
 
@@ -134,7 +146,7 @@ def fetch_cpagrip_offers(
                             continue
 
                         # Determine tags
-                        restrictions = row.query_selector('.offer_restrictions').inner_text().lower()
+                        restrictions = restrictions_el.inner_text().lower()
                         tags: List[str] = []
                         if 'no login' in restrictions:
                             tags.append('no-login')

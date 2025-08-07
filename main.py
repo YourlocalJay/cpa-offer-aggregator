@@ -13,13 +13,12 @@ Enhanced version with:
 
 import argparse
 import json
-import os
 import shutil
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Tuple
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -130,8 +129,6 @@ def save_to_files(
             logger.info(f"Saved {len(all_offers)} offers to {all_offers_path}")
             logger.info(f"Saved {len(filtered_offers)} filtered offers to {filtered_path}")
             logger.info(f"Saved CSV report to {csv_path}")
-
-        return filtered_path
 
     except Exception as exc:
         if logger:
@@ -297,7 +294,7 @@ def main() -> None:
     # Save results
     output_dir = Path(args.output_dir)
     try:
-        filtered_path = save_to_files(
+        save_to_files(
             all_offers,
             filtered_offers,
             output_dir=output_dir,
