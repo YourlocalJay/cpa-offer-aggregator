@@ -27,8 +27,13 @@ RATE_LIMIT_DELAY = 1  # second between retries
 
 def load_mylead_token() -> str:
     token_path = os.path.join(os.path.dirname(__file__), "..", "mylead_token.txt")
-    with open(token_path, "r", encoding="utf-8") as f:
-        return f.read().strip()
+    try:
+        with open(token_path, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "❌ mylead_token.txt not found. Run get_mylead_token.py first."
+        ) from exc
 
 
 def fetch_mylead_offers(params: Optional[dict] = None) -> List[Dict[str, Any]]:
@@ -42,20 +47,13 @@ def fetch_mylead_offers(params: Optional[dict] = None) -> List[Dict[str, Any]]:
         on error.
     """
     try:
-        token = load_mylead_token()
-    except FileNotFoundError:
-        logger.error(
-            "MyLead token file not found. Please run get_mylead_token.py first."
-        )
+        headers = {
+            "Authorization": f"Bearer {load_mylead_token()}",
+            "Accept": "application/json",
+        }
+    except RuntimeError as exc:
+        logger.error(str(exc))
         return []
-    except OSError as exc:
-        logger.error(f"Error loading MyLead token: {exc}")
-        return []
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/json",
-    }
 
     try:
         data = _make_api_request(MYLEAD_API_URL, headers, params)
