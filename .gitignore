@@ -1,4 +1,5 @@
 mylead_token.txt
 __pycache__/
 *.pyc
+# Generated output directory
 output/
