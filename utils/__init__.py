@@ -1,2 +1,2 @@
-"""Utility helpers for the CPA Offer Aggregator."""
+"""Utility modules for the CPA Offer Aggregator."""
 
