@@ -3,38 +3,37 @@ import requests
 
 API_URL = "https://api.mylead.eu/api/external/v1/auth/login"
 
-def main() -> None:
+
+def fetch_mylead_token() -> str | None:
+    """Authenticate with the MyLead API and return an access token."""
     username = os.environ.get("MYLEAD_USERNAME")
     password = os.environ.get("MYLEAD_PASSWORD")
     if not username or not password:
         print("❌ Missing MyLead credentials")
-        return
+        return None
 
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     data = {"username": username, "password": password}
 
     try:
         response = requests.post(API_URL, headers=headers, data=data, timeout=10)
+        response.raise_for_status()
     except requests.RequestException as exc:  # network-related errors
         print(f"❌ Login failed: {exc}")
-        return
+        return None
 
-    if response.status_code == 200:
-        try:
-            token = response.json().get("access_token")
-        except ValueError:
-            print("❌ Login failed: Invalid JSON response")
-            return
-        if not token:
-            print("❌ Login failed: access_token not found in response")
-            return
-        with open("mylead_token.txt", "w", encoding="utf-8") as f:
-            f.write(token)
-        print("✔️ MyLead login successful")
-        print("✔️ Access token saved to mylead_token.txt")
-    else:
-        print(f"❌ Login failed: {response.status_code} {response.reason}")
+    try:
+        token = response.json().get("access_token")
+    except ValueError:
+        print("❌ Login failed: Invalid JSON response")
+        return None
+    if not token:
+        print("❌ Login failed: access_token not found in response")
+        return None
+
+    print("✔️ MyLead login successful")
+    return token
 
 
 if __name__ == "__main__":
-    main()
+    fetch_mylead_token()

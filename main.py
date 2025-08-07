@@ -13,8 +13,8 @@ Enhanced version with:
 
 import argparse
 import json
+import os
 import shutil
-import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -29,6 +29,7 @@ from fetchers.ogads_fetcher import fetch_ogads_offers
 from fetchers.cpagrip_fetcher import fetch_cpagrip_offers
 from filters import filter_offers
 from utils.logging import setup_logger
+from get_mylead_token import fetch_mylead_token
 
 # Constants
 DEFAULT_OUTPUT_DIR = Path("output")
@@ -274,12 +275,18 @@ def main() -> None:
     )
 
     # Generate token before fetching offers
-    subprocess.run(["python", "get_mylead_token.py"], check=True)
+    token = fetch_mylead_token()
+    if token:
+        os.environ["MYLEAD_TOKEN"] = token
+    else:
+        logger.warning("MyLead token not retrieved; MyLead offers may be unavailable.")
+    Path("mylead_token.txt").unlink(missing_ok=True)
 
     # Fetch offers from all networks in parallel
     start_time = time.time()
     all_offers, errors = fetch_all_offers_parallel(logger)
     fetch_duration = time.time() - start_time
+    Path("mylead_token.txt").unlink(missing_ok=True)
 
     for error in errors:
         logger.error(error)
