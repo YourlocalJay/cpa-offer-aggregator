@@ -14,6 +14,7 @@ Enhanced version with:
 import argparse
 import json
 import shutil
+import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -264,6 +265,9 @@ def main() -> None:
         f"  Required Tags: {args.required_tags}\n" +
         (f"  Excluded Tags: {args.excluded_tags}\n" if args.excluded_tags else "")
     )
+
+    # Generate token before fetching offers
+    subprocess.run(["python", "get_mylead_token.py"], check=True)
 
     # Fetch offers from all networks in parallel
     start_time = time.time()

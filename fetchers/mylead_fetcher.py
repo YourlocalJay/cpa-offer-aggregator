@@ -5,20 +5,17 @@ MyLead Offer Fetcher
 This module contains a helper function for querying the MyLead API and
 translating the response into a uniform offer dictionary format expected by
 the aggregator. MyLead provides a REST API which returns JSON describing
-available CPA offers. To use this fetcher you must supply a valid API key
-via the `MYLEAD_API_KEY` environment variable (see `.env.example`).
+available CPA offers. To use this fetcher, generate an access token with
+`get_mylead_token.py`, which stores the token in `mylead_token.txt`.
 """
 
 import os
 import time
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
-from dotenv import load_dotenv
 
 from utils.logging import setup_logger
-
-load_dotenv()
 logger = setup_logger(__name__)
 
 # Constants
@@ -26,6 +23,12 @@ MYLEAD_API_URL = "https://mylead.global/api/v2/offers"
 MYLEAD_API_TIMEOUT = 30  # seconds
 MAX_RETRIES = 3
 RATE_LIMIT_DELAY = 1  # second between retries
+
+
+def load_mylead_token() -> str:
+    token_path = os.path.join(os.path.dirname(__file__), "..", "mylead_token.txt")
+    with open(token_path, "r", encoding="utf-8") as f:
+        return f.read().strip()
 
 
 def fetch_mylead_offers(params: Optional[dict] = None) -> List[Dict[str, Any]]:
@@ -38,17 +41,20 @@ def fetch_mylead_offers(params: Optional[dict] = None) -> List[Dict[str, Any]]:
         List of offer dictionaries with standardized keys. Returns empty list
         on error.
     """
-    api_key = os.getenv("MYLEAD_API_KEY")
-    if not api_key:
+    try:
+        token = load_mylead_token()
+    except FileNotFoundError:
         logger.error(
-            "MyLead API key not found in environment variables. "
-            "Please set MYLEAD_API_KEY in your .env file."
+            "MyLead token file not found. Please run get_mylead_token.py first."
         )
+        return []
+    except OSError as exc:
+        logger.error(f"Error loading MyLead token: {exc}")
         return []
 
     headers = {
+        "Authorization": f"Bearer {token}",
         "Accept": "application/json",
-        "Authorization": f"Bearer {api_key}",
     }
 
     try:
