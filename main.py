@@ -280,13 +280,11 @@ def main() -> None:
         os.environ["MYLEAD_TOKEN"] = token
     else:
         logger.warning("MyLead token not retrieved; MyLead offers may be unavailable.")
-    Path("mylead_token.txt").unlink(missing_ok=True)
 
     # Fetch offers from all networks in parallel
     start_time = time.time()
     all_offers, errors = fetch_all_offers_parallel(logger)
     fetch_duration = time.time() - start_time
-    Path("mylead_token.txt").unlink(missing_ok=True)
 
     for error in errors:
         logger.error(error)

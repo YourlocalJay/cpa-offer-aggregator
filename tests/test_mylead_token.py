@@ -3,13 +3,12 @@ import sys
 import requests
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-import get_mylead_token
+from get_mylead_token import fetch_mylead_token
 
 
-def test_main_success(monkeypatch, tmp_path, capsys):
+def test_fetch_mylead_token_success(monkeypatch, capsys):
     monkeypatch.setenv("MYLEAD_USERNAME", "user")
     monkeypatch.setenv("MYLEAD_PASSWORD", "pass")
-    monkeypatch.chdir(tmp_path)
 
     class MockResponse:
         status_code = 200
@@ -18,27 +17,25 @@ def test_main_success(monkeypatch, tmp_path, capsys):
         def json(self):
             return {"access_token": "token123"}
 
-    monkeypatch.setattr(requests, "post", lambda *a, **k: MockResponse())
-    get_mylead_token.main()
+        def raise_for_status(self):
+            return None
 
-    token_file = tmp_path / "mylead_token.txt"
-    assert token_file.read_text() == "token123"
+    monkeypatch.setattr(requests, "post", lambda *a, **k: MockResponse())
+    token = fetch_mylead_token()
+    assert token == "token123"
     output = capsys.readouterr().out
     assert "✔️ MyLead login successful" in output
 
 
-def test_main_request_error(monkeypatch, tmp_path, capsys):
+def test_fetch_mylead_token_request_error(monkeypatch, capsys):
     monkeypatch.setenv("MYLEAD_USERNAME", "user")
     monkeypatch.setenv("MYLEAD_PASSWORD", "pass")
-    monkeypatch.chdir(tmp_path)
 
     def raise_error(*args, **kwargs):
         raise requests.RequestException("network error")
 
     monkeypatch.setattr(requests, "post", raise_error)
-    get_mylead_token.main()
-
-    token_file = tmp_path / "mylead_token.txt"
-    assert not token_file.exists()
+    token = fetch_mylead_token()
+    assert token is None
     output = capsys.readouterr().out
     assert "Login failed" in output
