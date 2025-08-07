@@ -16,7 +16,7 @@ import json
 import shutil
 import subprocess
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
@@ -55,12 +55,11 @@ def save_config(config: dict) -> None:
         print(f"Warning: Could not save config file - {e}")
 
 def fetch_all_offers_parallel(logger=None) -> Tuple[List[Dict[str, Any]], List[Exception]]:
-    """Fetch offers from all networks in parallel with retries."""
-    networks = {
-        "MyLead": fetch_mylead_offers,
-        "OGAds": fetch_ogads_offers,
-        "CPAGrip": fetch_cpagrip_offers
-    }
+    """Fetch offers from all networks with limited parallelism and retries.
+
+    Playwright-based fetchers are serialized to avoid thread-safety issues,
+    while the MyLead API fetcher still runs in a background thread.
+    """
 
     all_offers = []
     errors = []
@@ -80,14 +79,22 @@ def fetch_all_offers_parallel(logger=None) -> Tuple[List[Dict[str, Any]], List[E
                 time.sleep(2 ** attempt)  # Exponential backoff
         return []
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = {
-            executor.submit(fetch_with_retries, fetcher, name): name
-            for name, fetcher in networks.items()
-        }
+    # Run the MyLead API fetcher in parallel, but serialize Playwright fetchers.
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        mylead_future = executor.submit(
+            fetch_with_retries, fetch_mylead_offers, "MyLead"
+        )
 
-        for future in as_completed(futures):
-            all_offers.extend(future.result())
+        # Playwright-backed fetchers must not run concurrently. Executing them
+        # sequentially prevents race conditions when Playwright manages browser
+        # instances in the same process.
+        for name, fetcher in [
+            ("OGAds", fetch_ogads_offers),
+            ("CPAGrip", fetch_cpagrip_offers),
+        ]:
+            all_offers.extend(fetch_with_retries(fetcher, name))
+
+        all_offers.extend(mylead_future.result())
 
     return all_offers, errors
 
