@@ -29,6 +29,34 @@ playwright install
 Copy `.env.example` to `.env` and populate it with your network API keys and
 login credentials.
 
+### MyLead token retrieval
+
+The MyLead fetcher requires an access token. Provide your MyLead credentials
+via the `MYLEAD_USERNAME` and `MYLEAD_PASSWORD` environment variables (for
+example in your `.env` file). The token can be generated manually:
+
+```bash
+python get_mylead_token.py
+```
+
+This script logs in to MyLead and writes the token to `mylead_token.txt` in the
+project root. When you run `main.py` the script is invoked automatically so the
+token is refreshed before offers are fetched.
+
+#### Troubleshooting
+
+- **Missing credentials** – `get_mylead_token.py` prints `❌ Missing MyLead
+  credentials`. Ensure `MYLEAD_USERNAME` and `MYLEAD_PASSWORD` are set.
+- **Invalid login** – a `401`/`403` response indicates incorrect credentials or
+  an account issue. Verify your username/password and that the account is
+  active.
+- **Network errors** – connection timeouts or other `Login failed` messages can
+  stem from network issues or API downtime. Retry once connectivity is restored.
+- **`mylead_token.txt` not found** – run the token script again to regenerate a
+  token; the file is read by the MyLead fetcher for the `Authorization` header.
+- **Expired token** – if fetching offers starts returning `401` responses, rerun
+  `get_mylead_token.py` to refresh the token.
+
 ## Usage
 
 Run the aggregator with optional filters:
