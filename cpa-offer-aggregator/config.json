@@ -1,0 +1,18 @@
+{
+  "geo": "US",
+  "device": "Android",
+  "min_payout": 1.50,
+  "categories": ["Mobile Submits", "Giveaways"],
+  "required_tags": ["Reddit-safe"],
+  "output_dir": "output",
+  "destinations": [
+      {
+          "path": "../aiqbrain-landing/public/data/offers.json",
+          "enabled": true
+      },
+      {
+          "path": "/var/www/offers/latest.json",
+          "enabled": false
+      }
+  ]
+}
