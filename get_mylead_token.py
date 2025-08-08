@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 import requests
 
 API_URL = "https://api.mylead.eu/api/external/v1/auth/login"
@@ -31,9 +33,17 @@ def fetch_mylead_token() -> str | None:
         print("❌ Login failed: access_token not found in response")
         return None
 
+    token_path = Path(__file__).with_name("mylead_token.txt")
+    try:
+        token_path.write_text(token)
+    except OSError as exc:
+        print(f"❌ Failed to write token file: {exc}")
+        return None
+
     print("✔️ MyLead login successful")
     return token
 
 
 if __name__ == "__main__":
-    fetch_mylead_token()
+    if fetch_mylead_token() is None:
+        raise SystemExit(1)

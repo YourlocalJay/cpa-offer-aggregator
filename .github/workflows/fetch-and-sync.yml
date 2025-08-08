@@ -1,0 +1,40 @@
+name: Fetch and Sync Offers
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  fetch-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Fetch MyLead token
+        env:
+          MYLEAD_USERNAME: ${{ secrets.MYLEAD_USERNAME }}
+          MYLEAD_PASSWORD: ${{ secrets.MYLEAD_PASSWORD }}
+        run: python get_mylead_token.py
+      - name: Generate offers
+        run: python main.py
+      - name: Copy and commit offer file
+        env:
+          PAT: ${{ secrets.AIQBRAIN_LANDING_PAT }}
+        run: |
+          git clone https://x-access-token:${PAT}@github.com/YourlocalJay/aiqbrain-landing ../aiqbrain-landing
+          cp cloudflare_offers.json ../aiqbrain-landing/public/data/cloudflare_offers.json
+          cd ../aiqbrain-landing
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/cloudflare_offers.json
+          git commit -m "chore: sync new CPA offers from aggregator" || echo "No changes to commit"
+          git push origin HEAD:main
+
