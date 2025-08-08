@@ -6,11 +6,12 @@ This module contains a helper function for querying the MyLead API and
 translating the response into a uniform offer dictionary format expected by
 the aggregator. MyLead provides a REST API which returns JSON describing
 available CPA offers. To use this fetcher, generate an access token with
-`fetch_mylead_token()` and set the ``MYLEAD_TOKEN`` environment variable.
+`get_mylead_token.py` and ensure the resulting ``mylead_token.txt`` file
+exists in the project root.
 """
 
-import os
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -26,12 +27,13 @@ RATE_LIMIT_DELAY = 1  # second between retries
 
 
 def load_mylead_token() -> str:
-    token = os.environ.get("MYLEAD_TOKEN")
-    if token:
-        return token
-    raise RuntimeError(
-        "❌ MYLEAD_TOKEN not found. Run fetch_mylead_token() first."
-    )
+    token_path = Path(__file__).resolve().parent.parent / "mylead_token.txt"
+    try:
+        return token_path.read_text().strip()
+    except OSError:
+        raise RuntimeError(
+            "❌ mylead_token.txt not found. Run get_mylead_token.py first."
+        )
 
 
 def fetch_mylead_offers(params: Optional[dict] = None) -> List[Dict[str, Any]]:

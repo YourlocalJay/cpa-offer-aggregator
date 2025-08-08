@@ -13,8 +13,9 @@ Enhanced version with:
 
 import argparse
 import json
-import os
 import shutil
+import subprocess
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -29,7 +30,6 @@ from fetchers.ogads_fetcher import fetch_ogads_offers
 from fetchers.cpagrip_fetcher import fetch_cpagrip_offers
 from filters import filter_offers
 from utils.logging import setup_logger
-from get_mylead_token import fetch_mylead_token
 
 # Constants
 DEFAULT_OUTPUT_DIR = Path("output")
@@ -275,10 +275,9 @@ def main() -> None:
     )
 
     # Generate token before fetching offers
-    token = fetch_mylead_token()
-    if token:
-        os.environ["MYLEAD_TOKEN"] = token
-    else:
+    try:
+        subprocess.run([sys.executable, "get_mylead_token.py"], check=True)
+    except subprocess.CalledProcessError:
         logger.warning("MyLead token not retrieved; MyLead offers may be unavailable.")
 
     # Fetch offers from all networks in parallel
@@ -318,6 +317,26 @@ def main() -> None:
         )
     except Exception as e:
         logger.error(f"Failed to save files: {e}")
+        return
+
+    # Write Cloudflare offer feed to repository root
+    cloudflare_offers = [
+        {
+            "name": o["name"],
+            "url": o["url"],
+            "geo": o.get("geo", []),
+            "device": o.get("device", "All"),
+            "payout": o.get("payout", 0),
+            "tags": o.get("tags", []),
+        }
+        for o in filtered_offers
+    ]
+    try:
+        with open("cloudflare_offers.json", "w", encoding="utf-8") as f:
+            json.dump(cloudflare_offers, f, indent=2)
+        logger.info("Wrote cloudflare_offers.json")
+    except Exception as e:
+        logger.error(f"Failed to write cloudflare_offers.json: {e}")
         return
 
     # Sync to destinations if requested
