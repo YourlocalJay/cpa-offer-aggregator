@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 from pathlib import Path
 
 import requests
@@ -14,6 +16,7 @@ def fetch_mylead_token() -> str | None:
     username = os.environ.get("MYLEAD_USERNAME")
     password = os.environ.get("MYLEAD_PASSWORD")
     if not username or not password:
+        print(f"DEBUG: MYLEAD_USERNAME={username}, MYLEAD_PASSWORD={'set' if password else 'missing'}")
         print("❌ Missing MyLead credentials")
         return None
 
