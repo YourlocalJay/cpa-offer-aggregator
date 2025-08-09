@@ -3,7 +3,10 @@ from pathlib import Path
 
 import requests
 
-API_URL = os.environ.get("MYLEAD_LOGIN_URL", "https://api.mylead.eu/api/external/v1/auth/login")
+API_URL = os.environ.get(
+    "MYLEAD_LOGIN_URL",
+    f"{os.environ.get('MYLEAD_API_BASE', 'https://api.mylead.global/v2')}/auth/login"
+)
 
 
 def fetch_mylead_token() -> str | None:
@@ -14,11 +17,11 @@ def fetch_mylead_token() -> str | None:
         print("❌ Missing MyLead credentials")
         return None
 
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    data = {"username": username, "password": password}
+    headers = {"Content-Type": "application/json"}
+    payload = {"username": username, "password": password}
 
     try:
-        response = requests.post(API_URL, headers=headers, data=data, timeout=10)
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=10)
         response.raise_for_status()
     except requests.RequestException as exc:  # network-related errors
         print(f"❌ Login failed: {exc}")
