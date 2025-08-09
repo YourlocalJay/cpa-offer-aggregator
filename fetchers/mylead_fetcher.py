@@ -10,6 +10,7 @@ available CPA offers. To use this fetcher, generate an access token with
 exists in the project root.
 """
 
+import os
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -26,14 +27,26 @@ MAX_RETRIES = 3
 RATE_LIMIT_DELAY = 1  # second between retries
 
 
-def load_mylead_token() -> str:
+def load_mylead_token() -> Optional[str]:
+    """Return a MyLead API token.
+
+    Preference order:
+    1) Environment variable MYLEAD_TOKEN
+    2) Local file mylead_token.txt (project root)
+    Returns None if not found (callers should handle gracefully).
+    """
+    # 1) Prefer env var
+    env_token = os.getenv("MYLEAD_TOKEN")
+    if env_token:
+        return env_token.strip()
+
+    # 2) Fallback to file
     token_path = Path(__file__).resolve().parent.parent / "mylead_token.txt"
     try:
         return token_path.read_text().strip()
     except OSError:
-        raise RuntimeError(
-            "❌ mylead_token.txt not found. Run get_mylead_token.py first."
-        )
+        logger.error("❌ mylead_token.txt not found and MYLEAD_TOKEN not set.")
+        return None
 
 
 def fetch_mylead_offers(params: Optional[dict] = None) -> List[Dict[str, Any]]:
@@ -46,14 +59,14 @@ def fetch_mylead_offers(params: Optional[dict] = None) -> List[Dict[str, Any]]:
         List of offer dictionaries with standardized keys. Returns empty list
         on error.
     """
-    try:
-        headers = {
-            "Authorization": f"Bearer {load_mylead_token()}",
-            "Accept": "application/json",
-        }
-    except RuntimeError as exc:
-        logger.error(str(exc))
+    token = load_mylead_token()
+    if not token:
+        # Soft-fail: tests and prod both expect empty list rather than exception
         return []
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json",
+    }
 
     try:
         data = _make_api_request(MYLEAD_API_URL, headers, params)
