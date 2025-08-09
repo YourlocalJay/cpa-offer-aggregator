@@ -3,7 +3,7 @@ from pathlib import Path
 
 import requests
 
-API_URL = "https://api.mylead.eu/api/external/v1/auth/login"
+API_URL = os.environ.get("MYLEAD_LOGIN_URL", "https://api.mylead.eu/api/external/v1/auth/login")
 
 
 def fetch_mylead_token() -> str | None:
@@ -25,12 +25,20 @@ def fetch_mylead_token() -> str | None:
         return None
 
     try:
-        token = response.json().get("access_token")
+        json_response = response.json()
     except ValueError:
         print("❌ Login failed: Invalid JSON response")
         return None
+
+    token = (
+        json_response.get("access_token")
+        or json_response.get("token")
+        or (json_response.get("data") or {}).get("token")
+    )
+
     if not token:
-        print("❌ Login failed: access_token not found in response")
+        print(f"❌ Login failed: access_token not found in response (status code {response.status_code})")
+        print(f"Response body (truncated): {response.text[:400]!r}")
         return None
 
     token_path = Path(__file__).with_name("mylead_token.txt")
